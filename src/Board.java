@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Board {
@@ -34,6 +36,16 @@ public class Board {
 		togglePosition(x, y);
 	}
 	
+	private Board(Board board) {
+		this.board = new boolean[board.getSize()][board.getSize()];
+		for (int i = 0; i < board.getSize(); i++) {
+			for(int j = 0; j < board.getSize(); j++) {
+				this.board[i][j] = board.board[i][j];
+			}
+		}
+		numberOfQueens = board.numberOfQueens;
+	}
+	
 	public boolean togglePosition(int x, int y) {
 		if (x >= 0 && y >= 0 && x < board.length && y < board.length) {
 			board[x][y] = !board[x][y];
@@ -64,6 +76,18 @@ public class Board {
 			for(int j = 0; j < board.length; j++) {
 				if (board[i][j] && checkRadialCollisions(i, j) != 0) {
 					counter++;
+				}
+			}
+		}
+		return counter;
+	}
+	
+	public int getBoardRating() {
+		int counter = 0;
+		for(int i = 0; i < board.length; i++) {
+			for(int j = 0; j < board.length; j++) {
+				if (board[i][j]) {
+					counter+= checkRadialCollisions(i, j);
 				}
 			}
 		}
@@ -168,69 +192,42 @@ public class Board {
 	public Board MinConflicts(int maxSteps) {
 		Board current = this;
 		Board neighbor;
-		int lastConflictCount = Integer.MAX_VALUE;
-		for (int i = 0; i < maxSteps; i++) {
+		mainLoop:for (int i = 0; i < maxSteps; i++) {
 			if (current.isGoal()) {
 				return current;
 			}
 			int column = ThreadLocalRandom.current().nextInt(0, board.length-1);
-			int minVar = 0;
+			int minVar = -1;
 			int minVal = Integer.MAX_VALUE;
-			int queenLoc = -1;
+			List<Integer> positions = new ArrayList<Integer>();
 			for(int j = 0; j < board.length; j++) {
-				if (board[column][j]) {
-					queenLoc = j;
+				int result = current.checkRadialCollisions(column, j);
+				if (current.board[column][j] == true && result == 0) {
+					continue mainLoop;
 				}
-				int result = checkRadialCollisions(column, j);
-				if ( !current.hasQueen(column, j)) {
-					int randomizedOption = ThreadLocalRandom.current().nextInt(0,3);
-					if (randomizedOption == 0) { 
-						if (result <= minVal) {
-							minVal = result;
-							minVar = j;
-						}
-					} else if (randomizedOption == 1) {
-						if (result < minVal) {
-							minVal = result;
-							minVar = j;
-						}						
-					} else if (randomizedOption == 2) {
-						if (result < minVal && j >= 0.35 * board.length && j <= 0.65 * board.length) {
-							minVal = result;
-							minVar = j;
-						}
-					} else if (randomizedOption == 3) {
-						if (result <= minVal && j >= 0.35 * board.length && j <= 0.65 * board.length) {
-							minVal = result;
-							minVar = j;
-						}
-					}
+				if (result == minVal) {
+					positions.add(j);
+				} else if (result < minVal) {
+					positions.clear();
+					positions.add(j);
+					minVal = result;
 				}
 			}
-			if (checkRadialCollisions(column, queenLoc) != 0) {
-				if ( minVal <= checkRadialCollisions(column, queenLoc) && minVar != queenLoc) {
-					neighbor = new Board(current, column, minVar);
-					for(int g = 0; g < board.length; g++) {
-						if (neighbor.board[column][g] && g != minVar) {
-							neighbor.togglePosition(column, g);
-						}
-					}
-					if (lastConflictCount != neighbor.getNumberImproperQueens()) {
-						lastConflictCount = current.getNumberImproperQueens();
-						if (neighbor.getNumberImproperQueens() <= current.getNumberImproperQueens()) {
-							current = neighbor;
-						}
-					} else {
-						lastConflictCount = current.getNumberImproperQueens();
-						current = neighbor;
-					}
-				} else {
-					i--;
+			minVar = positions.get(ThreadLocalRandom.current().nextInt(0, positions.size()));
+			neighbor = new Board(current);
+			for(int g = 0; g < board.length; g++) {
+				if (neighbor.board[column][g] == true && g != minVar) {
+					neighbor.board[column][g] = false;
+					neighbor.numberOfQueens--;
+				} else if (neighbor.board[column][g] == false && g == minVar) {
+					neighbor.numberOfQueens++;
+					neighbor.board[column][g] = true;
 				}
-			} else {
-				i--;
 			}
-			System.out.println( ((float) i / (float) maxSteps) * 100 + "%\n    Number of Conflicts: " + current.getNumberImproperQueens());
+			if (neighbor.getBoardRating() <= current.getBoardRating()) {
+				current = neighbor;
+			}
+			System.out.println( ((float) i / (float) maxSteps) * 100 + "%\n    Number of Conflicts: " + current.getNumberImproperQueens() + " " + current.getBoardRating());
 		}
 		return current;
 	}
