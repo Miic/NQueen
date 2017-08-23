@@ -1,17 +1,18 @@
 
 public class Main {
 	public static void main(String[] args) {
-		Board board = new Board(15, true);
-		Board newBoard = board.MinConflicts(100000);
-		System.out.println(newBoard);
-		System.out.println("NumberOfQueens: " + newBoard.getNumberOfQueens() + " IsGoal?: " + newBoard.isGoal() + " NumberOfConflictingQueens" + newBoard.getNumberImproperQueens());
-		System.out.println();
-		int map[][] = newBoard.getCollisionMap();
-		for(int i = 0; i < map.length; i++) {
-			for(int j = 0; j < map[i].length; j++) {
-				System.out.print(map[i][j] + "  ");
+		
+		final int max = 200;
+		Board board = new Board(22, true);
+		for (int i = 0; i < max; i++) {
+			Board newBoard = board.MinConflicts(10000);
+			System.out.println("\nTrial: " + i + "/" + max + "\n    Conflicts: " + newBoard.getNumberImproperQueens());
+			
+			if (newBoard.isGoal()) {
+				System.out.println("\n" + newBoard);
+				System.out.println("\nTrial: " + i + "/" + max + "\n\nNumberOfQueens: " + newBoard.getNumberOfQueens() + "\nIsGoal?: " + newBoard.isGoal() + "\nNumberOfConflictingQueens: " + newBoard.getNumberImproperQueens() + "\nNumber Proper Queens: " + newBoard.getNumberProperQueens());
+				break;
 			}
-			System.out.println();
 		}
 	}
 }

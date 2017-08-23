@@ -82,6 +82,18 @@ public class Board {
 		return counter;
 	}
 	
+	public int getNumberProperQueens() {
+		int counter = 0;
+		for(int i = 0; i < board.length; i++) {
+			for(int j = 0; j < board.length; j++) {
+				if (board[i][j] && checkRadialCollisions(i, j) == 0) {
+					counter++;
+				}
+			}
+		}
+		return counter;
+	}
+	
 	public int getBoardRating() {
 		int counter = 0;
 		for(int i = 0; i < board.length; i++) {
@@ -204,8 +216,7 @@ public class Board {
 				int result = current.checkRadialCollisions(column, j);
 				if (current.board[column][j] == true && result == 0) {
 					continue mainLoop;
-				}
-				if (result == minVal) {
+				} else if (result == minVal) {
 					positions.add(j);
 				} else if (result < minVal) {
 					positions.clear();
@@ -215,19 +226,21 @@ public class Board {
 			}
 			minVar = positions.get(ThreadLocalRandom.current().nextInt(0, positions.size()));
 			neighbor = new Board(current);
-			for(int g = 0; g < board.length; g++) {
-				if (neighbor.board[column][g] == true && g != minVar) {
-					neighbor.board[column][g] = false;
-					neighbor.numberOfQueens--;
-				} else if (neighbor.board[column][g] == false && g == minVar) {
-					neighbor.numberOfQueens++;
-					neighbor.board[column][g] = true;
+			if (!neighbor.board[column][minVar]) {
+				for(int g = 0; g < board.length; g++) {
+					if (neighbor.board[column][g] == true && g != minVar) {
+						neighbor.board[column][g] = false;
+						neighbor.numberOfQueens--;
+					} else if (neighbor.board[column][g] == false && g == minVar) {
+						neighbor.numberOfQueens++;
+						neighbor.board[column][g] = true;
+					}
 				}
-			}
-			if (neighbor.getBoardRating() <= current.getBoardRating()) {
+				//if (neighbor.getBoardRating() <= current.getBoardRating()) {
 				current = neighbor;
+				//}
 			}
-			System.out.println( ((float) i / (float) maxSteps) * 100 + "%\n    Number of Conflicts: " + current.getNumberImproperQueens() + " " + current.getBoardRating());
+			//System.out.println( ((float) i / (float) maxSteps) * 100 + "%\n    Number of Conflicts: " + current.getNumberImproperQueens());
 		}
 		return current;
 	}
