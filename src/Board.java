@@ -7,6 +7,8 @@ public class Board {
 	private boolean[][] board;
 	private int numberOfQueens;
 	
+	//Constructors
+	
 	public Board(int size) {
 		board = new boolean[size][size];
 		numberOfQueens = 0;
@@ -23,17 +25,6 @@ public class Board {
 			board = new boolean[size][size];
 			numberOfQueens = 0;
 		}
-	}
-	
-	private Board(Board board, int x, int y) {
-		this.board = new boolean[board.getSize()][board.getSize()];
-		for (int i = 0; i < board.getSize(); i++) {
-			for(int j = 0; j < board.getSize(); j++) {
-				this.board[i][j] = board.board[i][j];
-			}
-		}
-		numberOfQueens = board.numberOfQueens;
-		togglePosition(x, y);
 	}
 	
 	private Board(Board board) {
@@ -57,6 +48,81 @@ public class Board {
 		}
 		return false;
 	}
+	
+	//Algorithms
+	
+	public Board HillClimbing() {
+		Board current = this;
+		Board neighbor;
+		int minX, minY;
+		int[][] collisions;
+		while (true) {
+			minX = minY = 0;
+			collisions = current.getCollisionMap();
+			for(int i = 0; i < current.getSize(); i++) {
+				for (int j = 0; j < current.getSize(); j++) {
+					if (collisions[i][j] < collisions[minX][minY]) {
+						minX = i;
+						minY = j;
+					}
+				}
+			}
+			neighbor = new Board(current);
+			neighbor.board[minX][minY] = !neighbor.board[minX][minY];
+			if (neighbor.board[minX][minY]) {
+				neighbor.numberOfQueens++;
+			} else {
+				neighbor.numberOfQueens--;
+			}
+			if (neighbor.getNumberProperQueens() < current.getNumberProperQueens()) {
+				return current;
+			}
+			current = neighbor;
+		}
+	}
+	
+	public Board MinConflicts(int maxSteps) {
+		Board current = this;
+		Board neighbor;
+		mainLoop:for (int i = 0; i < maxSteps; i++) {
+			if (current.isGoal()) {
+				return current;
+			}
+			int column = ThreadLocalRandom.current().nextInt(0, board.length-1);
+			int minVar = -1;
+			int minVal = Integer.MAX_VALUE;
+			List<Integer> positions = new ArrayList<Integer>();
+			for(int j = 0; j < board.length; j++) {
+				int result = current.checkRadialCollisions(column, j);
+				if (current.board[column][j] == true && result == 0) {
+					continue mainLoop;
+				} else if (result == minVal) {
+					positions.add(j);
+				} else if (result < minVal) {
+					positions.clear();
+					positions.add(j);
+					minVal = result;
+				}
+			}
+			minVar = positions.get(ThreadLocalRandom.current().nextInt(0, positions.size()));
+			neighbor = new Board(current);
+			if (!neighbor.board[column][minVar]) {
+				for(int g = 0; g < board.length; g++) {
+					if (neighbor.board[column][g] == true && g != minVar) {
+						neighbor.board[column][g] = false;
+						neighbor.numberOfQueens--;
+					} else if (neighbor.board[column][g] == false && g == minVar) {
+						neighbor.numberOfQueens++;
+						neighbor.board[column][g] = true;
+					}
+				}
+				current = neighbor;
+			}
+		}
+		return current;
+	}
+	
+	//Helper Functions
 	
 	public int getNumberOfQueens() {
 		return numberOfQueens;
@@ -178,72 +244,6 @@ public class Board {
 		return map;
 	}
 	
-	public Board HillClimbing() {
-		Board current = this;
-		Board neighbor;
-		int minX, minY;
-		int[][] collisions = new int[current.getSize()][current.getSize()];
-		while (true) {
-			minX = minY = 0;
-			for(int i = 0; i < current.getSize(); i++) {
-				for (int j = 0; j < current.getSize(); j++) {
-					if (collisions[i][j] <= collisions[minX][minY] && current.isValidPosition(i, j)) {
-						minX = i;
-						minY = j;
-					}
-				}
-			}
-			neighbor = new Board(current, minX, minY);
-			if (neighbor.getNumberOfQueens() <= current.getNumberOfQueens()) {
-				return current;
-			}
-			current = neighbor;
-		}
-	}
-	
-	public Board MinConflicts(int maxSteps) {
-		Board current = this;
-		Board neighbor;
-		mainLoop:for (int i = 0; i < maxSteps; i++) {
-			if (current.isGoal()) {
-				return current;
-			}
-			int column = ThreadLocalRandom.current().nextInt(0, board.length-1);
-			int minVar = -1;
-			int minVal = Integer.MAX_VALUE;
-			List<Integer> positions = new ArrayList<Integer>();
-			for(int j = 0; j < board.length; j++) {
-				int result = current.checkRadialCollisions(column, j);
-				if (current.board[column][j] == true && result == 0) {
-					continue mainLoop;
-				} else if (result == minVal) {
-					positions.add(j);
-				} else if (result < minVal) {
-					positions.clear();
-					positions.add(j);
-					minVal = result;
-				}
-			}
-			minVar = positions.get(ThreadLocalRandom.current().nextInt(0, positions.size()));
-			neighbor = new Board(current);
-			if (!neighbor.board[column][minVar]) {
-				for(int g = 0; g < board.length; g++) {
-					if (neighbor.board[column][g] == true && g != minVar) {
-						neighbor.board[column][g] = false;
-						neighbor.numberOfQueens--;
-					} else if (neighbor.board[column][g] == false && g == minVar) {
-						neighbor.numberOfQueens++;
-						neighbor.board[column][g] = true;
-					}
-				}
-				//if (neighbor.getBoardRating() <= current.getBoardRating()) {
-				current = neighbor;
-				//}
-			}
-			//System.out.println( ((float) i / (float) maxSteps) * 100 + "%\n    Number of Conflicts: " + current.getNumberImproperQueens());
-		}
-		return current;
-	}
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
